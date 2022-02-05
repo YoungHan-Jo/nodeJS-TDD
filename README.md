@@ -115,7 +115,7 @@ npm install express -s 를 넣어주면 package.json에 기록해 둠.
 디펜던시에 등록된 모듈 설치
 - npm install
 
-* package.json에 있는 'scripts'
+package.json에 있는 'scripts'
 
     "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
