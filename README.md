@@ -25,25 +25,29 @@ JS - 브라우저에서는 window 전역객체를 사용하거나, RequireJS 같
 - 사용자 정의 모듈 : 사용자가 만든 모듈
 
 // math.js
-module.exports = {
-    sum: function(a,b){
-        return a + b;
-    },
-    minus: function(a,b){
-        return a - b;
+
+    module.exports = {
+        sum: function(a,b){
+            return a + b;
+        },
+        minus: function(a,b){
+            return a - b;
+        }
     }
-}
 
 // index.js
-const math = require('./math.js');
 
-math.sum(2,3);
+    const math = require('./math.js');
+
+    math.sum(2,3);
 
 ----------------------------
 # 04 Express
 
 - 어플리케이션
-    const app = express();
+
+        const app = express();
+
 - 미들웨어
 - 라우팅
 - 요청객체
@@ -53,51 +57,52 @@ math.sum(2,3);
 # 05 미들웨어 vs 에러 미들웨어
 
 미들웨어는 함수들의 연속
-// 인터페이스가 정해져 있음 - req,res,next 파라미터로 받음
-// 자기가 한 일이 끝나면 next()를 호출 - next()가 반드시 있어야함. req.session = 'ABC' 처럼 req객체 이용가능
-function logger1(req, res, next){
-    console.log('I am logger1');
-    next();
-}
-function logger2(req, res, next){
-    console.log('I am logger2');
-    next();
-}
-app.use(logger1);
-app.use(logger2);
+- 인터페이스가 정해져 있음 - req,res,next 파라미터로 받음
+- 자기가 한 일이 끝나면 next()를 호출 - next()가 반드시 있어야함. req.session = 'ABC' 처럼 req객체 이용가능
+
+        function logger1(req, res, next){
+            console.log('I am logger1');
+            next();
+        }
+        function logger2(req, res, next){
+            console.log('I am logger2');
+            next();
+        }
+        app.use(logger1);
+        app.use(logger2);
 
 에러 미들웨어 
 
-function commonMw(req, res, next){
-console.log('commonMw');
-next(new Error('error occurred'));
-}
+    function commonMw(req, res, next){
+    console.log('commonMw');
+    next(new Error('error occurred'));
+    }
 
-function errorMw(err, req, res, next){
-    console.log(err.message);
-    // 에러를 처리하거나
-    next();
-    // 다음 미들웨어로 에러를 넘김
-    // next(err); 
-}
+    function errorMw(err, req, res, next){
+        console.log(err.message);
+        // 에러를 처리하거나
+        next();
+        // 다음 미들웨어로 에러를 넘김
+        // next(err); 
+    }
 
-app.use(commonMw);
-app.use(errorMw);
+    app.use(commonMw);
+    app.use(errorMw);
 
 -------------------------
 # 06 Express
 
-const express = require('express')
-const app = express()
-const port = 3000
+    const express = require('express')
+    const app = express()
+    const port = 3000
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+    app.get('/', (req, res) => {
+    res.send('Hello World!')
+    })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+    app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+    })
 
 여기서 (req,res) 요청 응답 객체는
 http의 req,res와는 다른 express의 req,res 객체임
