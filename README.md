@@ -247,7 +247,269 @@ npm i should --save-dev
 --------------------------
 # 14 superTest
 
+https://github.com/visionmedia/supertest#readme
+
 - 단위 테스트: 함수의 기능 테스트 ( should )
 - 통합 테스트: API의 기능 테스트 ( superTest )
 - 슈퍼 테스트는 익스프레스 통합 테스트용 라이브러리다 
 - 내부적으로 익스프레스 서버를 구동시켜 실제 요청을 보낸 뒤 결과를 검증한다
+
+// index.js
+
+    // 테스트 모듈로 사용하기 위해
+    module.exports = app;
+
+
+// index.spec.js
+
+    const app = require('./index');
+    const request = require('superTest');
+
+    describe('GET /users는 ', () => {
+        it('...', (done) => {
+            request(app)
+                .get('/users')
+                .end((err,res) => {
+                    console.log(res.body);
+                    done();
+                })
+        })
+    })
+
+# 15 API 테스트 GET /users
+
+    const request = require('superTest');
+    const should = require('should')
+    const app = require('./index');
+
+    describe('GET /users는 ', () => {
+        describe('성공시', () => {
+            it('유저 객체를 담은 배열로 응답한다.', (done) => {
+                request(app)
+                    .get('/users')
+                    .end((err,res) => {
+                        res.body.should.be.instanceOf(Array);
+                        done();
+                    })
+            })
+        })
+    })
+
+// package.json
+
+    "test": "mocha index.spec.js",
+
+으로 설정하면
+npm test로 테스트 실행 가능
+
+# 16 실패 테스트
+
+// index.spec.js
+
+    describe('실패시', () => {
+        it('limit이 숫자형이 아니면 400을 응답한다. ', (done) => {
+            request(app)
+                .get('/users?limit=two')
+                .expect(400) // 상태코드는 굳이 res객체로 should.be를 사용하지 않아도됨
+                .end(done); // done만 있으면 이렇게 줄여서 쓸 수 있음
+        })
+    })
+
+// index.js
+
+    app.get('/users', (req, res) => {
+    req.query.limit = req.query.limit || 10; // req.query.limit의 값이 없으면 기본값 10으로
+    const limit = parseInt(req.query.limit, 10); // 10w진법 정수로 변환
+    if(Number.isNaN(limit)){ // 숫자가 아니면
+        return res.status(400).end(); // 400을 응답
+    }
+    res.json(users.slice(0,limit));
+    })
+
+# 17 GET /user/:id 테스트
+
+//index.spec.js
+
+    describe('GET /users/1은 ', () => {
+        describe('성공시', () => {
+            it('id가 1인 유저 객체를 반환한다', (done) => {
+                request(app)
+                    .get('/user/1')
+                    .end((err,res) => {
+                        res.body.should.have.property('id', 1); // 객체의 id 가 1이어야한다.
+                        done();
+                    })
+            })
+        })
+    });
+
+//index.js
+
+    app.get('/user/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10); // req.params.id 로 가져오기
+    const user = users.filter((user) => user.id === id)[0];
+    res.json(user);
+
+    })
+
+----------------------
+# 18 GET /user/:id 실패 테스트
+
+//index.spec.js
+
+    describe('실패시', () => {
+        it('id가 숫자가 아닐경우 400으로 응답한다. ', (done) => {
+            request(app)
+                .get('/user/one')
+                .expect(400)
+                .end(done);
+        });
+        it('id로 유저를 찾을 수 없을 경우 404로 응답한다.', (done) => {
+            request(app)
+                .get('/user/999')
+                .expect(404)
+                .end(done);
+        })
+    })
+
+// index.js
+
+    app.get('/user/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if(Number.isNaN(id)){
+        return res.status(400).end();
+    }
+    const user = users.filter((user) => user.id === id)[0];
+    if(!user){ // user이 undefined 일 때
+        return res.status(404).end();
+    }
+    res.json(user);
+
+    })
+
+-------------------
+# 19 DELETE /user/:id
+
+// index.spec.js
+
+    describe('DELETE /user/1은', () => {
+        describe('성공시', () => {
+            it('204를 응답한다.', (done) => {
+                request(app)
+                    .delete('/user/1')
+                    .expect(204)
+                    .end(done);
+            })
+        })
+    })
+
+// index.js
+
+    app.delete('/user/:id', (req,res) => {
+    const id = parseInt(req.params.id, 10);
+    users = users.filter(user => user.id !== id);
+    return res.status(204).end();
+    })
+
+---------------
+# 20 DELETE /user/:id 실패시
+
+// index.spec.js
+
+    describe('실패시', () => {
+        it('id가 숫자가 아닐경우 400으로 응답한다.', (done) => {
+            request(app)
+                .delete('/user/one')
+                .expect(400)
+                .end(done);
+        })
+    })
+
+-------------------
+# 21 POST /user 
+
+// index.spec.js
+
+    describe('POST /user', () => {
+        describe('성공시', () => {
+            let name = 'daniel', // 중복제거
+                body;
+            before(done=>{
+                request(app)
+                    .post('/user')
+                    .send({name}) // ES6 문법으로 name: 'danial'로 입력됨
+                    .expect(201)
+                    .end((err, res) => {
+                        body = res.body; // 결과값을 body에 저장
+                        done();
+                    })
+            })
+            // it('201 상태코드를 반환한다.', (done) => {
+            //     request(app)
+            //         .post('/user')
+            //         .send({name: 'daniel'})
+            //         .expect(201)
+            //         .end(done);
+            // }) // 위에 before에서 체크하기 때문에 생략
+            it('생성된 유저 객체를 반환한다.', () => { // 비동기가 아니라서 done 빼기
+                body.should.have.property('id');
+            });
+            it('입력한 name을 반환한다.', () =>{
+                body.should.have.property('name', name);
+            })
+        })
+    })
+
+// index.js
+
+req.body에 접근하기 위해 body-parse 미들웨어 필요함
+
+    app.post('/user', (req,res) => {
+    const name = req.body.name;
+    const id = Date.now();
+    const user = {id,name};
+    users.push(user);
+    res.status(201).json(user);
+    })
+
+------------------
+# 22 POST /user 실패 테스트
+
+// index.spec.js
+
+    describe('실패시', () => {
+        it('name 파라미터 누락시 400을 반환한다.', (done) => {
+            request(app)
+                .post('/user')
+                .send({})
+                .expect(400)
+                .end(done);
+        })
+        it('name이 중복일 경우 409를 반환한다.', (done) => {
+            request(app)
+                .post('/user')
+                .send({name: 'daniel'})
+                .expect(409)
+                .end(done);
+        })
+    })
+
+// index.js
+
+    app.post('/user', (req,res) => {
+    const name = req.body.name;
+    if(!name){
+        return res.status(400).end();
+    }
+    const dbUsers = users.filter((user) => user.name === name);
+    if(dbUsers.length > 0){
+        return res.status(409).end();
+    }
+    const id = Date.now();
+    const user = {id,name};
+    users.push(user);
+    res.status(201).json(user);
+    })
+
+-------------------
+# 23

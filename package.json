@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "body-parser": "^1.19.1",
     "express": "^4.17.2",
     "morgan": "^1.10.0"
   },
@@ -9,10 +10,11 @@
   "main": "index.js",
   "devDependencies": {
     "mocha": "^9.2.0",
-    "should": "^13.2.3"
+    "should": "^13.2.3",
+    "supertest": "^6.2.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha index.spec.js",
     "start": "node index.js"
   },
   "repository": {
