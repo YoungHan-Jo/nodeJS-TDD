@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "express": "^4.17.2",
+    "morgan": "^1.10.0"
+  },
+  "name": "nodejs-tdd",
+  "description": "-------------------\r # 01 노드JS는 이벤트 기반의 비동기 I/O 프레임워크",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YoungHan-Jo/nodeJS-TDD.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YoungHan-Jo/nodeJS-TDD/issues"
+  },
+  "homepage": "https://github.com/YoungHan-Jo/nodeJS-TDD#readme"
+}
