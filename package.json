@@ -7,7 +7,10 @@
   "description": "-------------------\r # 01 노드JS는 이벤트 기반의 비동기 I/O 프레임워크",
   "version": "1.0.0",
   "main": "index.js",
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "^9.2.0",
+    "should": "^13.2.3"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
