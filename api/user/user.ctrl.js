@@ -1,8 +1,4 @@
-var users = [
-    {id: 1, name: 'alice'},
-    {id: 2, name: 'ben'},
-    {id: 3, name: 'chris'}
-]
+const models = require('../../models');
 
 const index = (req, res) => {
     req.query.limit = req.query.limit || 10; // req.query.limit의 값이 없으면 기본값 10으로
@@ -10,7 +6,14 @@ const index = (req, res) => {
     if (Number.isNaN(limit)){ // 숫자가 아니면
         return res.status(400).end(); // 400을 응답
     }
-    res.json(users.slice(0,limit));
+
+    models.User
+        .findAll({
+            limit
+        })
+        .then(users => {
+            res.json(users);
+        })
 }
 const show = (req, res) => {
     const id = parseInt(req.params.id, 10);

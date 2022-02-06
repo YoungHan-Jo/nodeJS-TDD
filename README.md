@@ -637,3 +637,158 @@ https://expressjs.com/ko/guide/routing.html
         create,
         update
     }
+
+spec가 여러개로 늘어나면
+find명령어로 테스트 파일을 찾아서 인자로 넘겨주는 방식,
+모카 옵션에 --grep
+
+--------------------
+# 26 테스트 환경 개선
+
+npm i cross-env -s 설치
+
+테스트환경으로 npm test실행
+//pachage.json
+
+    "scripts": {
+        "test": "cross-env NODE_ENV=test mocha api/user/user.spec.js",
+        "start": "node index.js"
+    },
+
+테스트 환경에서 미들웨어 실행하지 않기
+//index.js
+
+    if(process.env.NODE_ENV !== 'test'){
+    app.use(morgan('dev'));
+    }
+
+superTest는 서버를 돌리기 때문에
+서버 구동시 로그가 뜨는데 없애기
+index.js의 app.listen(3000,()=>...) 없애기
+-> 없애면 npm start로 실제 서버 돌렸을때 서버 유지가 안됨.
+-> bin/www.js 만들어서 여기서 서버 돌리기
+
+    "scripts": {
+        "test": "cross-env NODE_ENV=test mocha api/user/user.spec.js",
+        "start": "node bin/www.js"
+    },
+
+--------------------
+# 27 노드 ORM 시퀄라이져
+
+npm i sequelize -s
+npm i sqlite3 -s
+
+• insert users (`name`) values ('alice');
+→ User.create({name: 'alice'}) 
+
+• select * from users;
+→ User.findAll() 
+
+• update users set name = 'bek' where id = 1;
+→ User.update({name: 'bek'}, {where: {id: 1}}); 
+
+• delete from users where id = 1;
+→ User.destroy({where: {id: 1}});
+
+User 객체를 모델 이라고 함
+• 데이터베이스 테이블을 ORM으로 추상화한것을 모델이라고 한다 
+
+우리가 사용할 유저 모델을 만들어 보자
+• sequelize.define(): 모델 정의 
+• sequelize.sync(): 데이터베이스 연동
+
+모델 정의
+// models.js
+
+    const Sequelize = require('sequelize');
+    const sequelize = new Sequelize({
+        dialect: 'sqlite',
+        storage: './db.sqlite'
+    })
+
+    const User = sequelize.define('User',{
+        name: Sequelize.STRING
+    });
+
+    module.exports = {Sequelize, sequelize, User};
+
+// bin/sync-db.js
+
+    const models = require('../models');
+
+    models.sequelize.sync({force: true}); //기존에 db가 있어라도 새로만들기
+
+터미널에
+node bin/sync-db.js 실행
+-> db.sqlite 생성됨
+
+--------------------
+# 28 DB ORM 동기화
+
+// sync-db.js
+
+    const models = require('../models');
+
+    module.exports = () => {
+        return models.sequelize.sync({force: true}); //기존에 db가 있어라도 새로만들기
+        // 리턴값이 promise를 리턴해서 비동기 처리를 완료하도록 인터페이스를 제공함
+    }
+
+// www.js
+
+    const app = require('../index');
+    const syncDB = require('./sync-db');
+
+    // promise라서 then 사용 가능
+    syncDB().then(_=> {
+        console.log('Sync database!');
+        app.listen(3000, () => {
+            console.log('Server is running on 3000 port');
+        })
+    })
+
+--------------------
+# 29 API - DB 연동
+
+
+//user.spec.js 
+
+    const models = require('../../models');
+
+    before(()=> models.sequelize.sync({force: true})); // 동기화
+    // before((done) => {// db 싱크는 비동기라서 done 필요
+    //     models.sequelize.sync({force: true}).then(_=>done());
+    // }) // 모카에서는 promise 보장해줘서 위와 같이 줄여쓸 수 있음
+
+// user.ctrl.js
+
+    const index = (req, res) => {
+        req.query.limit = req.query.limit || 10; // req.query.limit의 값이 없으면 기본값 10으로
+        const limit = parseInt(req.query.limit, 10); // 10w진법 정수로 변환
+        if (Number.isNaN(limit)){ // 숫자가 아니면
+            return res.status(400).end(); // 400을 응답
+        }
+
+        models.User.findAll({})
+            .then(users => {
+                res.json(users);
+            })
+    }
+
+샘플 DB 넣기
+//user.spec.js
+
+    const users = [{name: 'alice'},{name: 'ben'},{name: 'chuck'}]
+    before(() => models.sequelize.sync({force: true})); // 초기화
+    before(() => models.User.bulkCreate(users)) // 샘플 DB 넣기
+
+시퀄라이즈 로그 없애기
+//models.js
+
+    const sequelize = new Sequelize({
+        dialect: 'sqlite',
+        storage: './db.sqlite',
+        logging: false // 로그 없애기
+    })
+

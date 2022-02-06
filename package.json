@@ -1,8 +1,11 @@
 {
   "dependencies": {
     "body-parser": "^1.19.1",
+    "cross-env": "^7.0.3",
     "express": "^4.17.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "sequelize": "^6.15.0",
+    "sqlite3": "^5.0.2"
   },
   "name": "nodejs-tdd",
   "description": "-------------------\r # 01 노드JS는 이벤트 기반의 비동기 I/O 프레임워크",
@@ -14,8 +17,8 @@
     "supertest": "^6.2.2"
   },
   "scripts": {
-    "test": "mocha index.spec.js",
-    "start": "node index.js"
+    "test": "cross-env NODE_ENV=test mocha api/user/user.spec.js",
+    "start": "node bin/www.js"
   },
   "repository": {
     "type": "git",
