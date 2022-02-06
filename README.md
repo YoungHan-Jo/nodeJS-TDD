@@ -512,4 +512,128 @@ req.body에 접근하기 위해 body-parse 미들웨어 필요함
     })
 
 -------------------
-# 23
+# 23 PUT /user/:id 
+
+// index.spec.js
+
+    describe('PUT /user/:id', () => {
+        describe('성공시', () => {
+            it('변경된 name을 응답한다.', (done) => {
+                const name = 'charles';
+                request(app)
+                    .put('/user/3')
+                    .send({name})
+                    .end((err,res) => {
+                        res.body.should.have.property('name', name);
+                        done();
+                    })
+            })
+        })
+    })
+
+// index.js
+
+    app.put('/user/:id', (req,res) => {
+    const id = parseInt(req.params.id, 10);
+    const name = req.body.name;
+    const user = users.filter(user => user.id === id)[0];
+    user.name = name;
+    
+    res.json(user);
+    })
+
+--------------------
+# 24 PUT /user/:id 실패 테스트
+
+// index.spec.js
+
+    describe('실패시', () => {
+        const name = 'charles';
+        it('정수가 아닌 id일 경우 400 응답', (done) => {
+            request(app)
+                .put('/user/three')
+                .send({name})
+                .expect(400)
+                .end(done);
+        })
+        it('name이 없을 경우 400 응답', (done) => {
+            request(app)
+                .put('/user/3')
+                .send({})
+                .expect(400)
+                .end(done);
+        })
+        it('없는 유저일 경우 404 응답', (done) => {
+            request(app)
+                .put('/user/999')
+                .send({name : 'foo'})
+                .expect(404)
+                .end(done);
+        })
+        it('이름이 중복일 경우 409 응답', (done) => {
+            request(app)
+                .put('/user/3')
+                .send({name : 'ben'})
+                .expect(409)
+                .end(done);
+        })
+    })
+
+// index.js
+
+    app.put('/user/:id', (req,res) => {
+    const id = parseInt(req.params.id, 10);
+    const name = req.body.name;
+    if (Number.isNaN(id) || !name) return res.status(400).end();
+    
+    const isConflict = users.filter(user => user.name === name).length;
+    if (isConflict) return res.status(409).end();
+
+    const user = users.filter(user => user.id === id)[0];
+    if (!user) return res.status(404).end();
+    
+    user.name = name;
+    
+    res.json(user);
+    })
+
+--------------------
+# 25 라우터 코드정리
+
+https://expressjs.com/ko/guide/routing.html
+
+역할에 따라 파일로 분리
+- api/user/index.js : 라우팅 설정
+
+- api/user/user.ctrl.js : 컨트롤러, API
+
+- api/user/user.spec.js : 테스트 코드
+* 테스트 코드가 있으면 리팩토링에 부담이 없음
+
+// api/user/index.js
+
+    const express = require('express')
+    const router = express.Router();
+    const ctrl = require('./user.ctrl');
+
+    router.get('/', ctrl.index);
+
+    router.get('/:id', ctrl.show);
+
+    router.delete('/:id', ctrl.destroy)
+
+    router.post('/', ctrl.create)
+
+    router.put('/:id', ctrl.update);
+
+    module.exports = router;
+
+// api/user/user.ctrl.js
+
+    module.exports = { //es6문법
+        index,
+        show,
+        destroy,
+        create,
+        update
+    }
