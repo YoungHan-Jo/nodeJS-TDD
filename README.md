@@ -1,5 +1,40 @@
 # NodeJS TDD
 
+# 00 VS Code 단축키
+
+https://www.inflearn.com/news/30755
+
+덩어리로 드래그하기
+- alt shift 좌/우
+
+블록 끝으로 이동 
+- ctrl shift \
+
+함수 이름에서 F2누르면 사용되고 있는 이름도 같이 변경
+
+사용중인 함수 정의로 가기
+- F12
+
+함수 사용하는곳 검색
+- alt shift F12
+
+파일탐색기로 이동
+- alt 0
+
+에디터로 이동
+- alt 1
+
+파일 바로가기
+- ctrl P
+
+커맨드창
+- ctrl shift C
+
+
+
+
+
+
 -------------------
 # 01 노드JS는 이벤트 기반의 비동기 I/O 프레임워크
 
@@ -749,7 +784,7 @@ node bin/sync-db.js 실행
     })
 
 --------------------
-# 29 API - DB 연동
+# 29 API - DB 연동 ( index 컨트롤러 )
 
 
 //user.spec.js 
@@ -792,3 +827,142 @@ node bin/sync-db.js 실행
         logging: false // 로그 없애기
     })
 
+--------------------
+# 30 API - DB 연동 ( show 컨트롤러 )
+
+mocha watch 옵션 -w 붙이기
+// package.json
+
+    "scripts": {
+        "test": "cross-env NODE_ENV=test mocha api/user/user.spec.js -w",
+        "start": "node bin/www.js"
+    },
+
+//user.ctrl.js
+
+    const show = (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        if (Number.isNaN(id)){
+            return res.status(400).end();
+        }
+        console.log('id : ', id);
+        models.User.findOne({
+            where: {id}
+        }).then( user => {
+            if (!user) return res.status(404).end();
+            res.json(user);
+        })
+    }
+
+-------------------------
+# 31 API - DB 연동 ( destroy 컨트롤러 )
+
+//user.ctrl.js
+
+    const destroy = (req,res) => {
+        const id = parseInt(req.params.id, 10);
+        if (Number.isNaN(id)){
+            return res.status(400).end();
+        }
+        models.User.destroy({
+            where: {id}
+        }).then(() => {
+            res.status(204).end();
+        })
+    }
+
+-------------------------
+# 32 API - DB 연동 ( create 컨트롤러 )
+
+name 컬럼 유니크 설정
+//models.js
+
+    const User = sequelize.define('User',{
+        name: {
+            type: Sequelize.STRING,
+            unique: true
+        }
+    });
+
+각 테스트 마다 시작부분에 추가하기
+
+    const users = [{name: 'alice'},{name: 'ben'},{name: 'chuck'}]
+    before(() => models.sequelize.sync({force: true})); // 초기화
+    before(() => models.User.bulkCreate(users)) // 샘플 DB 넣기
+
+console.log(err)로 에러명 찾은 뒤 catch로 잡기
+//user.ctrl.js
+
+    const create = (req,res) => {
+        const name = req.body.name;
+        if (!name){
+            return res.status(400).end();
+        }
+        
+        // if (dbUsers.length > 0) return res.status(409).end();
+        models.User.create({name})
+            .then(user => {
+                res.status(201).json(user);
+            })
+            .catch(err => {
+                if (err.name === 'SequelizeUniqueConstraintError'){
+                    return res.status(409).end();
+                }
+                res.status(500).end();
+            }) 
+    }
+
+-------------------------
+# 33 API - DB 연동 ( update 컨트롤러 )
+
+
+// user.ctrl.js
+
+    const update = (req,res) => {
+        const id = parseInt(req.params.id, 10);
+        const name = req.body.name;
+        if (Number.isNaN(id) || !name) return res.status(400).end();
+
+        models.User.findOne({where: {id}})
+            .then(user => {
+                if (!user) return res.status(404).end();
+
+                user.name = name;
+                user.save()
+                    .then(user => {
+                    res.json(user);
+                    })
+                    .catch(err => {
+                        if (err.name === 'SequelizeUniqueConstraintError'){
+                            return res.status(409).end();
+                        }
+                        res.status(500).end();
+                    })
+            })
+    }
+
+-------------------------
+# 34 실제 서비스 일때는 데이터 유지되록
+
+//sync-db.js
+
+    module.exports = () => {
+        const options = {
+            force: process.env.NODE_ENV === 'test' ? true : false
+        }
+        return models.sequelize.sync(options); //기존에 db가 있어라도 새로만들기
+        // 리턴값이 promise를 리턴해서 비동기 처리를 완료하도록 인터페이스를 제공함
+    }
+
+---------------------------
+# 35 api 확장할 때
+
+api 폴더 밑에 새로 만들 api폴더 만들고 그 안에 
+- index.js 
+- user.ctrl.js 
+- user.spec.js
+파일 만들고
+
+메인index.js에
+app.use('/photo',photo);
+추가
