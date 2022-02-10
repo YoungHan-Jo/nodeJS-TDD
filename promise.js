@@ -14,3 +14,5 @@ new Promise((resolve,reject) => {
 .then(result => {
     console.log(result);
 })
+
+console.log(3);
